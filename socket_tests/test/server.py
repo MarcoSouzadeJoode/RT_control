@@ -3,7 +3,7 @@ import socket
 HOSTNAME = socket.gethostname()
 HOST = socket.gethostbyname(HOSTNAME)
 
-PORT = 5550
+PORT = 7070
 
 
 with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:

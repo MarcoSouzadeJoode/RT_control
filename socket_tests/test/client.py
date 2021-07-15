@@ -2,7 +2,7 @@ import socket
 
 HOSTNAME = socket.gethostname()
 HOST = socket.gethostbyname(HOSTNAME)
-PORT = 5550
+PORT = 7070
 
 header_size = 64
 

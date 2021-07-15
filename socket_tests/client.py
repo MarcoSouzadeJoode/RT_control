@@ -1,7 +1,7 @@
 import socket
 
 HEADER = 64
-PORT = 6060
+PORT = 7070
 FORMAT = "utf-8"
 DISCONNECT_MESSAGE = "!DISCONNECT"
 SERVER_NAME = socket.gethostname()
