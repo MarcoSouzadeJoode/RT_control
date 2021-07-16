@@ -24,6 +24,7 @@ with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
 
             print("Recieved", data.decode())
 
+            conn.send()
             conn.sendall("Recieved".encode())
             sent = input("> ").encode()
             conn.send(sent)

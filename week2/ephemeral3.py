@@ -19,24 +19,21 @@ import threading
 
 # SERVER
 
-PORT = 6060
-# first message to the server is 64 bytes long
+PORT = 7060  # first message to the server is 64 bytes long
 HEADER = 64
 FORMAT = "utf-8"
 
 # on my device, this returns "marco-Aspire-V3-772"
 SERVER_NAME = socket.gethostname()
 SERVER = socket.gethostbyname(SERVER_NAME)
-print(f"Server {SERVER}, Server name: {SERVER_NAME}")
+
+print(f"[INTERNAL] Server {SERVER}, Server name: {SERVER_NAME}")
 
 ADDR = (SERVER, PORT)
 DISCONNECT_MESSAGE = "!DISCONNECT"
 
-server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-server.bind(ADDR)
-
-
-
+s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+s.bind(ADDR)
 
 
 class Ephemeris:
@@ -70,9 +67,8 @@ class Ephemeris:
         self.end_datetime = datetime.datetime.strptime(self.stop, "%Y-%m-%d %H:%M:%S")
 
         self.duration = (self.end_datetime - self.start_datetime).total_seconds()
-        print(self.duration)
         if self.duration <= 0:
-            print("Duration of selected interval is negative. Please choose again.\n"
+            print("[INTERNAL] Duration of selected interval is negative. Please choose again.\n"
                   "the program will not continue with any calculations.")
         else:
             # the precision value (N) is relevant for the Horzions query,
@@ -141,8 +137,7 @@ class Ephemeris:
         Returns:
             * tuple of (RA, DEC) coordinates
         """
-        print("Simbad branch.")
-
+        print("[INTERNAL] Using the SIMBAD branch")
         # search SIMBAD for name
         try:
             # this branch will try searching in the database,
@@ -151,20 +146,20 @@ class Ephemeris:
             _dso = SkyCoord.from_name(self.name)
             _ra, _dec = _dso.ra.to_string(decimal=True), _dso.dec.to_string(decimal=True)
 
-            print(f"Name resolved: {self.name}")
-            print(_ra, _dec)
+            print(f"[INTERNAL] Name resolved: {self.name}")
+
 
             return _ra, _dec
 
         except astropy.coordinates.name_resolve.NameResolveError:
-            print("Name not resolved")
+            print("[INTERNAL] Name not resolved")
 
     def jpl_horizons(self):
         """A method for searching in the JPL Horizons catalogue.
         Used for solar system bodies.
         Returns tuple of az, el coordinate arrays
         """
-        print("JPL Horizons branch")
+        print("[INTERNAL] Using the HORIZONS branch")
 
         id_types = ["majorbody", "smallbody", "designation", "name", "asteroid_name", "comet_name"]
 
@@ -181,7 +176,7 @@ class Ephemeris:
                                             id_type=id_type)
                 break
             except ValueError:
-                print(f"Selected body is not of id_type {id_type}")
+                print(f"[INTERNAL] Selected body is not of id_type {id_type}")
 
         _ephemeris = _observation.ephemerides()
 
@@ -243,10 +238,9 @@ class Conversion:
         self.end_datetime = datetime.datetime.strptime(stop, "%Y-%m-%d %H:%M:%S")
 
         self.duration = (self.end_datetime - self.start_datetime).total_seconds()
-        print(self.duration)
 
         if self.duration <= 0:
-            print("Duration is smaller than 0.")
+            print("[INTERNAL] Duration is smaller than 0.")
         else:
             time_list = []
             _t = self.start_datetime
@@ -283,7 +277,7 @@ class Conversion:
     def generate_output_file(self):
         # starting date string, used for file name
         start_string = str(self.ut_time[0])
-        print(start_string)
+        print("[INTERNAL] ",start_string)
 
         # defining output file name
         output_file_name = f"{self.name}_{start_string}.txt"
@@ -307,8 +301,7 @@ class Conversion:
 #Quasar = Ephemeris(name="3C273", start="2021-07-13 08:40:00", stop="2021-07-13 9:00:00")
 #Vega = Conversion(280, 38, start="2021-07-13 08:40:00", stop="2021-07-13 9:00:00", name="Vega")
 
-DSO = Ephemeris(name="Cyg A", start="2021-07-14 08:40:00", stop="2021-07-14 9:00:00", solar_system=False)
-DSOConverter = Conversion(DSO.RA, DSO.DEC, start="2021-07-14 08:40:00", stop="2021-07-21 9:00:00", name="CygALong")
+# DSO = Ephemeris(name="Cyg A", start="2021-07-14 08:40:00", stop="2021-07-14 9:00:00", solar_system=False)
 
 
 def handle_client(conn, addr):
@@ -322,12 +315,15 @@ def handle_client(conn, addr):
 
             if msg == DISCONNECT_MESSAGE:
                 connected = False
+                exit()
 
-            print(f"SIGNED MESSAGE: [{addr}] : {msg}")
+            print(f"[RECEIVED] ", repr(msg))
 
             results = message_parsing(msg)
-            print(results)
-    conn.close()
+            send(conn, results)
+            print("[SENDING] ", repr(results))
+
+    # conn.close()
 
 
 def message_parsing(msg):
@@ -339,38 +335,43 @@ def message_parsing(msg):
         EPH = Ephemeris(name=parts[1], start=parts[2], stop=parts[3], solar_system=solar_system_b)
         if solar_system_b:
             if EPH.generated_file:
-                return f"output file generated\n{EPH.outfilename}"
+                return f"output_file_generated\n{EPH.outfilename}"
             else:
-                return "file generation failed"
+                return "file_generation_failed"
         else:
-            return f"coordinates solved\n{EPH.RA}\n{EPH.DEC}"
+            # returns back ra, dec, and name
+            return f"coordinates_solved\n{parts[1]}\n{EPH.RA}\n{EPH.DEC}\n{parts[2]}\n{parts[3]}"
 
     if request_type == "pushing_ra_dec":
         CNV = Conversion(RA=float(parts[1]), DEC=float(parts[2]), start=parts[3], stop=parts[4], name=parts[5])
         if CNV.generated_file:
-            return f"output file generated\n{CNV.outfilename}"
+            return f"output_file_generated\n{CNV.outfilename}"
         else:
             return "file generation failed"
 
 
 def start():
-    server.listen()
+    s.listen()
     print(f"[LISTENING] Server is listening on {SERVER}")
+    print("[INTERNAL] ",s)
+    """
     while True:
-        conn, addr = server.accept()
-        thread = threading.Thread(target=handle_client, args=(conn, addr))
-        thread.start()
-        print(f"[ACTIVE CONNECTIONS] {threading.activeCount() - 1}")
+        con, ad = s.accept()
+        handle_client(con, ad)
+    """
+    con, ad = s.accept()
+    handle_client(con, ad)
 
 
-def send(msg):
+
+def send(con, msg):
     message = msg.encode(FORMAT)
     msg_length = len(message)
     send_length = str(msg_length).encode(FORMAT)
     send_length += b' ' * (HEADER - len(send_length))
-    server.send(send_length)
-    server.send(message)
+    con.send(send_length)
+    con.send(message)
 
 
-#print("[STARTING] server is starting")
-#start()
+print("[STARTING] server is starting")
+start()
