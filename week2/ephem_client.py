@@ -2,7 +2,7 @@ import socket
 
 HOSTNAME = socket.gethostname()
 HOST = socket.gethostbyname(HOSTNAME)
-PORT = 7060
+PORT = 7080
 FORMAT = "utf-8"
 
 HEADER = 64
@@ -11,11 +11,11 @@ s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 s.connect(ADDR)
 
 # f"pushing_ra_dec\n{ra}\n{dec}\n{start}\n{stop}\n{name}"
-queries = ["resolve_request\nArcturus\n2021-07-14 08:40:00\n2021-07-14 9:00:00\nFalse",
-           "resolve_request\nVega\n2021-07-14 08:40:00\n2021-07-14 9:00:00\nFalse",
-           "resolve_request\nJupiter\n2021-07-14 08:40:00\n2021-07-14 9:00:00\nTrue",
-           "resolve_request\nMoon\n2021-07-14 08:40:00\n2021-07-14 9:00:00\nTrue",
-           "resolve_request\nSgr A\n2021-07-14 08:40:00\n2021-07-14 9:00:00\nFalse"]
+queries = ["resolve_request\nABCDEFG\n2021-07-14 08:41:00\n2021-07-14 9:00:00\nFalse",
+           "resolve_request\nVega\n2021-07-14 08:41:00\n2021-07-14 9:00:00\nFalse",
+           "resolve_request\nJupiter\n2021-07-14 08:41:00\n2021-07-14 9:00:00\nTrue",
+           "resolve_request\nMoon\n2021-07-14 08:41:00\n2021-07-14 9:00:00\nTrue",
+           "resolve_request\nSgr A\n2021-07-14 08:41:00\n2021-07-14 9:00:00\nFalse"]
 
 
 def send(msg):

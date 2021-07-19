@@ -19,7 +19,7 @@ import threading
 
 # SERVER
 
-PORT = 7060  # first message to the server is 64 bytes long
+PORT = 7080  # first message to the server is 64 bytes long
 HEADER = 64
 FORMAT = "utf-8"
 
@@ -62,6 +62,13 @@ class Ephemeris:
 
         self.generated_file = False
 
+        # Error tracking
+        # the error list is a list of two-element lists [code, info]
+        # where code is from "DSO_not_found", "SSO_not_found", "time_input_error"
+        # and info gives more precise information.
+
+        self.errors = []
+
         self.dt = datetime.timedelta(seconds=1)
         self.start_datetime = datetime.datetime.strptime(self.start, "%Y-%m-%d %H:%M:%S")
         self.end_datetime = datetime.datetime.strptime(self.stop, "%Y-%m-%d %H:%M:%S")
@@ -70,6 +77,7 @@ class Ephemeris:
         if self.duration <= 0:
             print("[INTERNAL] Duration of selected interval is negative. Please choose again.\n"
                   "the program will not continue with any calculations.")
+            self.errors.append(["time_input_error", "Duration of submitted time interval is negative."])
         else:
             # the precision value (N) is relevant for the Horzions query,
             # which will return N lines of ephemeris between start and end times.
@@ -99,7 +107,13 @@ class Ephemeris:
                 self.AZ, self.EL = self.jpl_horizons()
                 self.outfilename = self.generate_output_file()
             else:
-                self.RA, self.DEC = self.simbad()
+                try:
+                    self.RA, self.DEC = self.simbad()
+                except TypeError:
+                    if "simbad_name_not_resolved" in self.errors:
+                        print("[INTERNAL] error handled")
+                    else:
+                        self.errors.append(["DSO_not_found", f"RA and DEC of deep sky object {self.name} not found."])
 
     def _time_generation(self):
         """
@@ -147,12 +161,13 @@ class Ephemeris:
             _ra, _dec = _dso.ra.to_string(decimal=True), _dso.dec.to_string(decimal=True)
 
             print(f"[INTERNAL] Name resolved: {self.name}")
-
-
             return _ra, _dec
 
         except astropy.coordinates.name_resolve.NameResolveError:
             print("[INTERNAL] Name not resolved")
+            self.errors.append(["DSO_not_found", f"Deep sky object: {self.name} not found in the SIMBAD catalogue."
+                                                 f"Please try giving the name in a recognisable format."])
+
 
     def jpl_horizons(self):
         """A method for searching in the JPL Horizons catalogue.
@@ -176,6 +191,8 @@ class Ephemeris:
                                             id_type=id_type)
                 break
             except ValueError:
+                self.errors.append(["SSO_not_found", "SSO is not of known ID type (majorbody, smallbody, designation, "
+                                                     "name, asteroid_name, comet_name)"])
                 print(f"[INTERNAL] Selected body is not of id_type {id_type}")
 
         _ephemeris = _observation.ephemerides()
@@ -290,10 +307,11 @@ class Conversion:
             return output_file_name
 
 
-# TODO: transfer RA, DEC from search tool in Ephemeris object to Conversion object
-# TODO: start thinking about socket communication
-# TODO: mechanism for deciding if SSO is a major or minor body
-# TODO: --
+# TODO: transfer RA, DEC from search tool in Ephemeris object to Conversion object -- OK
+# TODO: start thinking about socket communication -- OK
+# TODO: mechanism for deciding if SSO is a major or minor body -- OK
+
+# TODO: error code reporting
 
 # Jupiter = Ephemeris(name="Jupiter Barycenter", start="2021-07-13 08:40:00",
 #                     stop="2021-07-13 9:00:00", solar_system=True)
@@ -342,6 +360,8 @@ def message_parsing(msg):
             # returns back ra, dec, and name
             return f"coordinates_solved\n{parts[1]}\n{EPH.RA}\n{EPH.DEC}\n{parts[2]}\n{parts[3]}"
 
+
+# TODO: generate filename before starting to create file
     if request_type == "pushing_ra_dec":
         CNV = Conversion(RA=float(parts[1]), DEC=float(parts[2]), start=parts[3], stop=parts[4], name=parts[5])
         if CNV.generated_file:
@@ -354,13 +374,15 @@ def start():
     s.listen()
     print(f"[LISTENING] Server is listening on {SERVER}")
     print("[INTERNAL] ",s)
-    """
+
     while True:
         con, ad = s.accept()
         handle_client(con, ad)
+
     """
     con, ad = s.accept()
     handle_client(con, ad)
+    """
 
 
 

@@ -1,0 +1,68 @@
+
+# Communication protocol for ephemeral.py
+
+
+1. COMMANDS SENT BY SERVER
+==========================
+
+
+# output filename pre-generation
+"expected_filename"
+
+# output file generation finished
+"output_file_generated"
+
+# coordinates of DSO object found
+"coordinates_solved"
+
+
+1. 1. ERRORS
+------------
+# all errors in the format of [error, description]
+# description might specify required actions, that need to be taken.
+
+# DSO not found in SIMBAD catalogue
+"DSO_not_found"
+("DSO_not_found\nA closer description of the problem that occurred")
+
+# SSO not found in JPL Horizons catalogue
+"SSO_not_found"
+("SSO_not_found\nA closer description of the problem that occurred")
+
+# Duration of input time is negative (stop < start)
+"time_input_error"
+
+# other errors (for example, file generation failed, for some reason):
+"error"
+
+
+2. COMMANDS EXPECTED BY SERVER
+==============================
+
+2. 1. EXPECTED RA, DEC FORMAT
+-----------------------------
+ra="12h29m06.6997s"
+dec="+02d03m08.5989s"
+
+2. 2. COMMANDS
+--------------
+
+# find object in catalogue
+"resolve_request \n DSO name, recognisable by SIMBAD or Horizons \n start \n stop \n SSO/DSO True/False"
+
+# example
+"resolve_request\nVega\n2021-07-14 08:41:00\n2021-07-14 9:00:00\nFalse"
+
+# generate file based on RA, DEC coordinates
+"pushing_ra_dec"
+
+# format
+"pushing_ra_dec\n{ra}\n{dec}\n{start}\n{stop}\n{name}"
+
+# example
+"pushing_ra_dec\n280\n40\n2021-07-14 08:41:00\n2021-07-14 9:00:00\MyRadioSourceName"
+
+
+
+
+
