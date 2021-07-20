@@ -77,7 +77,7 @@ class Ephemeris:
         if self.duration <= 0:
             print("[INTERNAL] Duration of selected interval is negative. Please choose again.\n"
                   "the program will not continue with any calculations.")
-            self.errors.append(["time_input_error", "Duration of submitted time interval is negative."])
+            self.errors.append(["error", "Time input error: Duration of submitted time interval is negative."])
         else:
             # the precision value (N) is relevant for the Horzions query,
             # which will return N lines of ephemeris between start and end times.
@@ -164,7 +164,7 @@ class Ephemeris:
 
         except astropy.coordinates.name_resolve.NameResolveError:
             print("[INTERNAL] Name not resolved")
-            self.errors.append(["DSO_not_found", f"Deep sky object: {self.name} not found in the SIMBAD catalogue."
+            self.errors.append(["error", f"DSO_not_found\nDeep sky object: {self.name} not found in the SIMBAD catalogue."
                                                  f"Please try giving the name in a recognisable format."])
 
 
@@ -190,7 +190,7 @@ class Ephemeris:
                                             id_type=id_type)
                 break
             except ValueError:
-                self.errors.append(["SSO_not_found", "SSO is not of known ID type (majorbody, smallbody, designation, "
+                self.errors.append(["error", "SSO_not_found\nSSO is not of known ID type (majorbody, smallbody, designation, "
                                                      "name, asteroid_name, comet_name)"])
                 print(f"[INTERNAL] Selected body is not of id_type {id_type}")
 
@@ -255,7 +255,7 @@ class Conversion:
 
         if self.duration <= 0:
             print("[INTERNAL] Duration is smaller than 0.")
-            self.errors.append(["time_input_error", "Duration of requested time interval is negative."])
+            self.errors.append(["error", "time_input_error\nDuration of requested time interval is negative."])
             raise ValueError
         else:
             time_list = []
@@ -397,7 +397,7 @@ def message_parsing(msg):
             if CNV.generated_file:
                 return f"output_file_generated\n{CNV.outfilename}"
             else:
-                return "error\nfile generation failed"
+                return "error\nFile generation failed."
         except ValueError:
             return CNV.errors
 
